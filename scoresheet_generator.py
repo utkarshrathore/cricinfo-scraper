@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2014, Utkarsh Singh Rathore
+# Copyright (c) 2014, Utkarsh Rathore
 # All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without 
