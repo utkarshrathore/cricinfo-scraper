@@ -144,7 +144,7 @@ if __name__ == "__main__":
 	try:
 		url = sys.argv[1]
 	except:
-		print 'USAGE: %s <Scorecard URL>' % filename
+		print 'USAGE: python %s <Scorecard URL>' % filename
 		sys.exit(2)
 
 	try:
