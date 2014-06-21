@@ -136,24 +136,30 @@ if __name__ == "__main__":
 	try:
 		url = sys.argv[1]
 	except:
-		print "usage: %s <Scorecard URL>" % filename
+		print 'USAGE: %s <Scorecard URL>' % filename
 		sys.exit(2)
 
 	try:
 		response = requests.get(url)
 	except:
-		print "URL fetch failed. Please check the URL (Sample: http://www.espncricinfo.com/...)"
+		print 'FATAL: URL fetch failed. Please check the URL (Sample: http://www.espncricinfo.com/...)'
 		sys.exit(2)
 
 	soup = bs4.BeautifulSoup(response.text)
-	teams = [str(a.get_text()) for a in soup.find_all("a","teamLink")]
+	teams = [str(a.get_text()) for a in soup.find_all('a','teamLink')]
 	team1 = teams[0]
 	team2 = teams[1]
 
 	bat_inning_1 = soup.find('table', class_='inningsTable', attrs={'id':'inningsBat1'})
 	bat_inning_2 = soup.find('table', class_='inningsTable', attrs={'id':'inningsBat2'})
 	bowl_inning_1 = soup.find('table', class_='inningsTable', attrs={'id':'inningsBowl1'})
-	bowl_inning_2 = soup.find('table', class_='inningsTable', attrs={'id':'inningsBowl'})
+	bowl_inning_2 = soup.find('table', class_='inningsTable', attrs={'id':'inningsBowl2'})
+
+	if not bat_inning_1 or not bat_inning_2:
+		print 'WARN: At least one batting inning is missing'
+
+	if not bowl_inning_1 or not bowl_inning_2:
+		print 'WARN: At least one bowling inning is missing'
 
 	bat_inning_1_stats = parse_bat_inning(bat_inning_1)
 	bat_inning_2_stats = parse_bat_inning(bat_inning_2)
