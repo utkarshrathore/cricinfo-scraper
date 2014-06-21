@@ -71,7 +71,11 @@ def get_dismissal_type(dismissal_str):
 def parse_bat_inning(bat_inning_soup):
 	batsman_stats = []
 
-	rows = bat_inning_soup.select(".inningsRow")
+	try:
+		rows = bat_inning_soup.select('.inningsRow')
+	except AttributeError:
+		return batsman_stats
+
 	for row in rows:
 		try:
 			player_name = get_canonical_player_name(str(row.select('td > a')[0].get('title')))
@@ -88,7 +92,11 @@ def parse_bat_inning(bat_inning_soup):
 def parse_bowl_inning(bowl_inning_soup):
 	bowler_stats = []
 
-	rows = bowl_inning_soup.select(".inningsRow")
+	try:
+		rows = bowl_inning_soup.select('.inningsRow')
+	except AttributeError:
+		return bowler_stats
+
 	for row in rows:
 		try:
 			player_name = get_canonical_player_name(str(row.select('td > a')[0].get('title')))
@@ -142,7 +150,7 @@ if __name__ == "__main__":
 	try:
 		response = requests.get(url)
 	except:
-		print 'FATAL: URL fetch failed. Please check the URL (Sample: http://www.espncricinfo.com/...)'
+		print '[FATAL] URL fetch failed. Please check the URL (Sample: http://www.espncricinfo.com/...)'
 		sys.exit(2)
 
 	soup = bs4.BeautifulSoup(response.text)
@@ -154,12 +162,6 @@ if __name__ == "__main__":
 	bat_inning_2 = soup.find('table', class_='inningsTable', attrs={'id':'inningsBat2'})
 	bowl_inning_1 = soup.find('table', class_='inningsTable', attrs={'id':'inningsBowl1'})
 	bowl_inning_2 = soup.find('table', class_='inningsTable', attrs={'id':'inningsBowl2'})
-
-	if not bat_inning_1 or not bat_inning_2:
-		print 'WARN: At least one batting inning is missing'
-
-	if not bowl_inning_1 or not bowl_inning_2:
-		print 'WARN: At least one bowling inning is missing'
 
 	bat_inning_1_stats = parse_bat_inning(bat_inning_1)
 	bat_inning_2_stats = parse_bat_inning(bat_inning_2)
@@ -176,8 +178,16 @@ if __name__ == "__main__":
 	batting_sheet.write(0, 4, 'runs_scored')
 	batting_sheet.write(0, 5, 'batting_strike_rate')
 	batting_sheet_row = 1
-	batting_sheet_row = write_bat_stats_to_excel(bat_inning_1_stats, team1, batting_sheet, batting_sheet_row)
-	batting_sheet_row = write_bat_stats_to_excel(bat_inning_2_stats, team2, batting_sheet, batting_sheet_row)
+
+	if bat_inning_1_stats:
+		batting_sheet_row = write_bat_stats_to_excel(bat_inning_1_stats, team1, batting_sheet, batting_sheet_row)
+	else:
+		print '[WARN] No data for Batting Inning 1 -- skipping'
+
+	if bat_inning_2_stats:
+		batting_sheet_row = write_bat_stats_to_excel(bat_inning_2_stats, team2, batting_sheet, batting_sheet_row)
+	else:
+		print '[WARN] No data for Batting Inning 2 -- skipping'
 
 	bowling_sheet = workbook.add_sheet('Bowling')
 	bowling_sheet.write(0, 0, 'player_name')
@@ -186,9 +196,18 @@ if __name__ == "__main__":
 	bowling_sheet.write(0, 3, 'wickets')
 	bowling_sheet.write(0, 4, 'economy')
 	bowling_sheet_row = 1
-	bowling_sheet_row = write_bowl_stats_to_excel(bowl_inning_1_stats, team2, bowling_sheet, bowling_sheet_row)
-	bowling_sheet_row = write_bowl_stats_to_excel(bowl_inning_2_stats, team1, bowling_sheet, bowling_sheet_row)
+
+	if bowl_inning_1_stats:
+		bowling_sheet_row = write_bowl_stats_to_excel(bowl_inning_1_stats, team2, bowling_sheet, bowling_sheet_row)
+	else:
+		print '[WARN] No data for Bowling Inning 1 -- skipping'
+
+	if bowl_inning_2_stats:
+		bowling_sheet_row = write_bowl_stats_to_excel(bowl_inning_2_stats, team1, bowling_sheet, bowling_sheet_row)
+	else:
+		print '[WARN] No data for Bowling Inning 2 -- skipping'
 
 	# All done. Save the workbook.
-	workbook_name = team1 + " " + "v" + " " + team2 + ".xls"
+	workbook_name = team1 + ' ' + 'v' + ' ' + team2 + '.xls'
 	workbook.save(workbook_name)
+	print '[ALL DONE] Scoresheet saved as %s' % workbook_name
