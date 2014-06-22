@@ -81,10 +81,16 @@ def parse_bat_inning(bat_inning_soup):
 			player_name = get_canonical_player_name(str(row.select('td > a')[0].get('title')))
 			how_out = get_dismissal_type(row.select('.battingDismissal')[0].get_text())
 			runs_scored = int(row.select('.battingRuns')[0].get_text())
-			strike_rate = float(row.select('td:nth-of-type(9)')[0].get_text())
-			batsman_stats.append([player_name, how_out, runs_scored, strike_rate])
 		except:
-			pass
+			continue
+
+		try:
+			strike_rate = float(row.select('td:nth-of-type(9)')[0].get_text())
+		except ValueError:
+			print '[WARN] Found illegal strike rate for %s -- continuing assuming sr = 0' % player_name
+			strike_rate = 0
+
+		batsman_stats.append([player_name, how_out, runs_scored, strike_rate])
 
 	return batsman_stats
 
@@ -103,9 +109,11 @@ def parse_bowl_inning(bowl_inning_soup):
 			overs = float(row.select('td:nth-of-type(3)')[0].get_text())
 			wickets = float(row.select('td:nth-of-type(6)')[0].get_text())
 			economy = float(row.select('td:nth-of-type(7)')[0].get_text())
-			bowler_stats.append([player_name, overs, wickets, economy])
 		except:
-			pass
+			print '[WARN] Unhandled exception in bowling stats for %s. Please try adding stats manually' % player_name
+			continue
+
+		bowler_stats.append([player_name, overs, wickets, economy])
 
 	return bowler_stats
 
@@ -154,19 +162,25 @@ if __name__ == "__main__":
 		sys.exit(2)
 
 	soup = bs4.BeautifulSoup(response.text)
-	teams = [str(a.get_text()) for a in soup.find_all('a','teamLink')]
-	team1 = teams[0]
-	team2 = teams[1]
 
-	bat_inning_1 = soup.find('table', class_='inningsTable', attrs={'id':'inningsBat1'})
-	bat_inning_2 = soup.find('table', class_='inningsTable', attrs={'id':'inningsBat2'})
-	bowl_inning_1 = soup.find('table', class_='inningsTable', attrs={'id':'inningsBowl1'})
-	bowl_inning_2 = soup.find('table', class_='inningsTable', attrs={'id':'inningsBowl2'})
+	bat_inning_1_soup = soup.find('table', class_='inningsTable', attrs={'id':'inningsBat1'})
+	bat_inning_2_soup = soup.find('table', class_='inningsTable', attrs={'id':'inningsBat2'})
+	bowl_inning_1_soup = soup.find('table', class_='inningsTable', attrs={'id':'inningsBowl1'})
+	bowl_inning_2_soup = soup.find('table', class_='inningsTable', attrs={'id':'inningsBowl2'})
 
-	bat_inning_1_stats = parse_bat_inning(bat_inning_1)
-	bat_inning_2_stats = parse_bat_inning(bat_inning_2)
-	bowl_inning_1_stats = parse_bowl_inning(bowl_inning_1)
-	bowl_inning_2_stats = parse_bowl_inning(bowl_inning_2)
+	team1 = str(bat_inning_1_soup.find('tr', class_="inningsHead").find('td', attrs={"colspan":"2"}).get_text().split()[0])
+	team2 = str(bat_inning_2_soup.find('tr', class_="inningsHead").find('td', attrs={"colspan":"2"}).get_text().split()[0])
+
+	'''
+	Teams can alternatively be queries as below but above is more robust
+	team1 = str(bat_inning_1.find('tr', class_="inningsHead").select('td')[1].get_text().split()[0])
+	team2 = str(bat_inning_2.find('tr', class_="inningsHead").select('td')[1].get_text().split()[0])
+	'''
+
+	bat_inning_1_stats = parse_bat_inning(bat_inning_1_soup)
+	bat_inning_2_stats = parse_bat_inning(bat_inning_2_soup)
+	bowl_inning_1_stats = parse_bowl_inning(bowl_inning_1_soup)
+	bowl_inning_2_stats = parse_bowl_inning(bowl_inning_2_soup)
 
 	workbook = xlwt.Workbook()
 	
