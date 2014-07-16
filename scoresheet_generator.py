@@ -168,8 +168,15 @@ if __name__ == "__main__":
 	bowl_inning_1_soup = soup.find('table', class_='inningsTable', attrs={'id':'inningsBowl1'})
 	bowl_inning_2_soup = soup.find('table', class_='inningsTable', attrs={'id':'inningsBowl2'})
 
+	# Team1, if it can't be fetched, implies match was washed out. So let's bail out here.
 	team1 = str(bat_inning_1_soup.find('tr', class_="inningsHead").find('td', attrs={"colspan":"2"}).get_text().split()[0])
-	team2 = str(bat_inning_2_soup.find('tr', class_="inningsHead").find('td', attrs={"colspan":"2"}).get_text().split()[0])
+
+	try:
+		team2 = str(bat_inning_2_soup.find('tr', class_="inningsHead").find('td', attrs={"colspan":"2"}).get_text().split()[0])
+	except AttributeError:
+		# Probably second inning did not happen, but let's pull the second team name irrespective
+		team2 = str(soup.find('table', class_='inningsTable', attrs={'id':'inningsBat0'}) \
+			    .find('tr', class_="inningsHead").find('td', attrs={"colspan":"2"}).get_text().split()[0])
 
 	'''
 	Teams can alternatively be queries as below but above is more robust
